@@ -25,6 +25,8 @@ vehicles = [
     {"lat": 41.721882, "lon": -87.618286, "vid": "7921", "pdist": 68853}
 ]
 
+# my_lat, my_lon = 41.85, -87.62
+
 @app.route("/", methods=["GET"])
 def home():
     return "Welcome to Bus Tracker App! Use the Alexa interface to interact."
