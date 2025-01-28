@@ -61,20 +61,38 @@ def get_location():
     else:
         return statement("I couldn't fetch your location due to an error. Please try again later.")
 
-@ask.intent("GetBusTimeIntent")
-def get_bus_time():
+@ask.intent("GetBusTimeIntent", convert={'routeNumber': int})
+def get_bus_time(routeNumber):
+    if not routeNumber:
+        return statement("Please specify the bus route number, like bus 3 or bus 10.")
+
     if not user_location["latitude"] or not user_location["longitude"]:
         return statement("Please set your location first using the Get Location command.")
     
     my_lat, my_lon = user_location["latitude"], user_location["longitude"]
 
+    cta_api_key = "API_KEY"
+    cta_url = f"http://www.ctabustracker.com/bustime/api/v2/getvehicles?key={cta_api_key}&rt={routeNumber}&tmres=m&format=json"
+    response = requests.get(cta_url)
+
+    if response.status_code != 200:
+        return statement("I couldn't fetch the bus information. Please try again later.")
+
+    vehicle_data = response.json().get("bustime-response", {}).get("vehicle", [])
+    if not vehicle_data:
+        return statement("No buses are currently running in this route.")
+
     nearby_buses = []
-    for vehicle in vehicles:
-        distance = calculate_distance(my_lat, my_lon, vehicle["lat"], vehicle["lon"])
+    for vehicle in vehicle_data:
+        bus_lat = float(vehicle["lat"])
+        bus_lon = float(vehicle["lon"])
+        distance = calculate_distance(my_lat, my_lon, bus_lat, bus_lon)
         travel_time = calculate_travel_time(distance)
         nearby_buses.append({"vid": vehicle["vid"], "time": travel_time})
 
     if nearby_buses:
+        nearby_buses.sort(key=lambda x: x["time"])
+        nearest_bus = nearby_buses[0]
         response = f"Bus {nearby_buses[0]['vid']} is approximately {nearby_buses[0]['time']:.2f} minutes away."
         return statement(response)
     else:
