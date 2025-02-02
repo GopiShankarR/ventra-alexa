@@ -46,11 +46,11 @@ class SetLocationIntentHandler(AbstractRequestHandler):
         return is_intent_name("SetLocationIntent")(handler_input)
 
     def handle(self, handler_input):
-        print("Inside SetLocationIntentHandler.handle()")  # Debugging
-        print("SetLocationIntent triggered!")  # Debugging
+        print("Inside SetLocationIntentHandler.handle()") 
+        print("SetLocationIntent triggered!") 
         
         slots = handler_input.request_envelope.request.intent.slots
-        print(f"Slots received: {slots}")  # Debugging
+        print(f"Slots received: {slots}") 
 
         lat_sign = slots["latSign"].value if "latSign" in slots else None
         lat_value = slots["lat"].value if "lat" in slots else None
@@ -81,7 +81,7 @@ class SetLocationIntentHandler(AbstractRequestHandler):
 
         user_location["latitude"] = lat_num
         user_location["longitude"] = long_num
-        print(f"Location set: {user_location}")  # Debugging
+        print(f"Location set: {user_location}") 
 
         return handler_input.response_builder.speak(
             f"Your location is set to latitude {lat_num} and longitude {long_num}."
@@ -172,7 +172,7 @@ def home():
         return "Welcome to the Bus Tracker App! Use the Alexa interface to interact."
     if request.method == "POST":
         print("POST request received at root endpoint")
-        print(request.get_json())  # Print the entire request payload
+        print(request.get_json()) 
     return skill_adapter.dispatch_request()
 
 if __name__ == "__main__":
