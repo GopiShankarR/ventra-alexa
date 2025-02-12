@@ -109,7 +109,7 @@ class GetBusTimeIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         slots = handler_input.request_envelope.request.intent.slots
         route_number = slots["routeNumber"].value if "routeNumber" in slots else None
-        requested_direction = slots["direction"].value.lower() if "direction" in slots else None
+        requested_direction = slots["direction"].value.lower() if "direction" in slots and slots["direction"].value else None
 
         if not route_number:
             return handler_input.response_builder.speak("Please specify a bus route number.").response
@@ -118,7 +118,7 @@ class GetBusTimeIntentHandler(AbstractRequestHandler):
             return handler_input.response_builder.speak("I don't have your location. Please set it first.").response
 
         my_lat, my_lon = user_location["latitude"], user_location["longitude"]
-        cta_api_key = "API_KEY"
+        cta_api_key = "API_KEY" 
         cta_url = f"http://www.ctabustracker.com/bustime/api/v2/getvehicles?key={cta_api_key}&rt={route_number}&tmres=m&format=xml"
 
         try:
@@ -134,19 +134,29 @@ class GetBusTimeIntentHandler(AbstractRequestHandler):
         if not vehicles:
             return handler_input.response_builder.speak(f"No buses found for route {route_number}.").response
 
+        threshold = 1.0 
+
         nearby_buses = []
         for vehicle in vehicles:
             bus_lat = float(vehicle.find("lat").text)
             bus_lon = float(vehicle.find("lon").text)
             bus_hdg = float(vehicle.find("hdg").text)
             bus_direction = get_direction(bus_hdg).lower()
-            
+
             if requested_direction and bus_direction != requested_direction:
                 continue
-            
+
             distance = calculate_distance(my_lat, my_lon, bus_lat, bus_lon)
+            
+            if distance > threshold:
+                continue
+
             travel_time = calculate_travel_time(distance)
-            nearby_buses.append({"vid": vehicle.find("vid").text, "time": travel_time, "direction": bus_direction})
+            nearby_buses.append({
+                "vid": vehicle.find("vid").text,
+                "time": travel_time,
+                "direction": bus_direction
+            })
 
         if nearby_buses:
             nearby_buses.sort(key=lambda x: x["time"])
@@ -157,7 +167,10 @@ class GetBusTimeIntentHandler(AbstractRequestHandler):
             ).response
         else:
             direction_text = f"going {requested_direction}" if requested_direction else ""
-            return handler_input.response_builder.speak(f"No buses {direction_text} on route {route_number} are near you right now.").response
+            return handler_input.response_builder.speak(
+                f"No buses {direction_text} on route {route_number} are near you right now."
+            ).response
+
 
 skill_builder.add_request_handler(LaunchRequestHandler())
 skill_builder.add_request_handler(SetLocationIntentHandler())
