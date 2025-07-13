@@ -7,9 +7,13 @@ import requests
 from math import radians, sin, cos, sqrt, atan2
 from word2number import w2n
 import xml.etree.ElementTree as ET
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 skill_builder = SkillBuilder()
+load_dotenv()
+cta_api_key = os.getenv("CTA_API_KEY")
 
 user_location = {"latitude": None, "longitude": None}
 
@@ -118,7 +122,6 @@ class GetBusTimeIntentHandler(AbstractRequestHandler):
             return handler_input.response_builder.speak("I don't have your location. Please set it first.").response
 
         my_lat, my_lon = user_location["latitude"], user_location["longitude"]
-        cta_api_key = "API_KEY" 
         cta_url = f"http://www.ctabustracker.com/bustime/api/v2/getvehicles?key={cta_api_key}&rt={route_number}&tmres=m&format=xml"
 
         try:
